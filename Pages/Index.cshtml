@@ -1,0 +1,27 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+<div class="text-left">
+    <h1 class="display-4 @(@Model.Temps[0].Temp > 10 ? "" : "temp-red")">
+        @Model.Temps[0].Temp°C
+    </h1>
+</div>
+<table class="table table-dark table-hover">
+    <thead>
+        <th>temp</th>
+        <th>humidity</th>
+        <th>date</th>
+    </thead>
+    <tbody>
+        @foreach (var t in Model.Temps)
+        {
+            <tr>
+                <td>@t.Temp</td>
+                <td>@t.Humidity</td>
+                <td>@t.Time.ToString("dddd, dd MMMM yyyy HH:mm:ss")</td>
+            </tr>
+        }
+    </tbody>
+</table>
