@@ -3,6 +3,12 @@
 @{
     ViewData["Title"] = "Home page";
 }
+@if (@Model.Temps.Length == 0)
+{
+    <h1 class="text-center">No data available yet.</h1>
+}
+else 
+{
 <div class="text-left">
     <h1 class="display-4 @(@Model.Temps[0].Temp > 10 ? "" : "temp-red")">
         @Model.Temps[0].Temp°C
@@ -25,3 +31,4 @@
         }
     </tbody>
 </table>
+}
