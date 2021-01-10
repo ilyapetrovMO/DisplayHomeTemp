@@ -9,4 +9,5 @@ FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS RUNTIME
 WORKDIR /app
 COPY --from=BUILD /src/publish .
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+CMD dotnet ef database update
 CMD ASPNETCORE_URLS=http://*:$PORT ASPNETCORE_ENVIRONMENT=Production dotnet DisplayHomeTemp.dll
