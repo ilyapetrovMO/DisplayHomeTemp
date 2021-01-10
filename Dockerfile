@@ -3,7 +3,7 @@ ARG DATABASE_URL
 ARG ASPNETCORE_ENVIRONMENT
 WORKDIR /src
 COPY . .
-RUN dotnet tool install dotnet-ef --global && dotnet publish -c Release -o ./publish
+RUN dotnet tool install dotnet-ef && dotnet publish -c Release -o ./publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS RUNTIME
 WORKDIR /app
