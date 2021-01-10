@@ -26,7 +26,7 @@ else
             <tr>
                 <td>@t.Temp</td>
                 <td>@t.Humidity</td>
-                <td>@t.Time.ToString("dddd, dd MMMM yyyy HH:mm:ss")</td>
+                <td>@t.Time.AddHours(4).ToString("dddd, dd MMMM yyyy HH:mm:ss")</td>
             </tr>
         }
     </tbody>
