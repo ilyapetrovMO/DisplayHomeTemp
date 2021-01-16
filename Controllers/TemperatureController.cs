@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Threading.Tasks;
 using DisplayHomeTemp.Models;
+using Microsoft.EntityFrameworkCore;
+using DisplayHomeTemp.Util;
+using WebPush;
 
 namespace DisplayHomeTemp.Controllers
 {
@@ -11,9 +14,13 @@ namespace DisplayHomeTemp.Controllers
     public class TemperatureController : ControllerBase
     {
         public record TempDto(double temperature, double humidity, string timestamp);
-        public TempsDbContext _db { get; set; }
 
-        public TemperatureController(TempsDbContext db)
+        private readonly TempsDbContext _db;
+        private readonly WebPushService _wp;
+
+        private const double LOWTEMP = 9d;
+
+        public TemperatureController(TempsDbContext db, WebPushService webPushService)
         {
             _db = db;
         }
@@ -35,13 +42,38 @@ namespace DisplayHomeTemp.Controllers
 
             _db.Temps.Add(tempReading);
 
+            if (tempReading.Temp < LOWTEMP)
+            {
+                var subs = await _db.Subscriptions.ToArrayAsync();
+
+                foreach (var sub in subs)
+                {
+                    try
+                    {
+                        await _wp.SendNotification(sub, $"Verbilki low temp alert: {tempReading.Temp} °C");
+                    }
+                    catch (WebPushException exception)
+                    {
+                        if (exception.StatusCode == System.Net.HttpStatusCode.NotFound || exception.StatusCode == System.Net.HttpStatusCode.Gone)
+                        {
+                            _db.Subscriptions.Remove(sub);
+                            await _db.SaveChangesAsync();
+                        }
+
+                        Console.Error.WriteLine("SendNotification error with status code: " + exception.StatusCode);
+                    }
+                }
+
+            }
+
             try
             {
                 return Ok(await _db.SaveChangesAsync());
             }
-            catch (System.Exception)
+            catch (DbUpdateException)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError,
+                    new { message = "Error while creating new temperature reading." });
             }
         }
     }
