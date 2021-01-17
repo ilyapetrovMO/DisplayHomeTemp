@@ -25,6 +25,9 @@ jobs:
     # Runs a set of commands using the runners shell
     - name: Run docker build and push to heroku
       env:
+        VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+        VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
         HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
         ASPNETCORE_ENVIRONMENT: Production
         APP_NAME: displayhometemp
