@@ -4,7 +4,7 @@ namespace DisplayHomeTemp.Models
     {
         public string Endpoint { get; set; }
             
-        public int ExpirationTime { get; set; }
+        public int? ExpirationTime { get; set; }
         
         public Key Keys { get; set; }
     }

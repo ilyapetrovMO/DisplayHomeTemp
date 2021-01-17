@@ -11,21 +11,23 @@ namespace DisplayHomeTemp.Util
         public WebPushClient WebPushClient { get; init; }
         public string VapidPublicKey { get; set; }
 
-        private readonly Dictionary<string, object> options;
-        private readonly TimeSpan MinTimeBetweenNotifications = TimeSpan.FromHours(12);
+        private readonly Dictionary<string, object> Options;
+        private readonly TimeSpan MinTimeBetweenNotifications = TimeSpan.FromHours(0);
         private DateTime? LastSentUtc = null;
 
         public WebPushService(IConfiguration config)
         {
             WebPushClient = new WebPushClient();
-            options = new Dictionary<string, object>();
-            DateTime.UtcNow.AddHours(12);
+            Options = new Dictionary<string, object>();
 
             var vapidPrivate = Environment.GetEnvironmentVariable("VapidPrivateKey");
-            var vapidPublic = Environment.GetEnvironmentVariable("VapidPublicKey");
+            vapidPrivate = string.IsNullOrEmpty(config["VapidDetails:VapidPrivate"]) ? vapidPrivate : config["VapidDetails:VapidPrivate"];
 
-            string vapidSubject = Environment.GetEnvironmentVariable("VapidSubject");
-            vapidSubject = string.IsNullOrEmpty(config["VapidSubject"]) ? vapidSubject : config["VapidSubject"];
+            var vapidPublic = Environment.GetEnvironmentVariable("VapidPublicKey");
+            vapidPublic = string.IsNullOrEmpty(config["VapidDetails:VapidPublic"]) ? vapidPublic : config["VapidDetails:VapidPublic"];
+
+            var vapidSubject = Environment.GetEnvironmentVariable("VapidSubject");
+            vapidSubject = string.IsNullOrEmpty(config["VapidDetails:VapidSubject"]) ? vapidSubject : config["VapidDetails:VapidSubject"];
 
             if (string.IsNullOrEmpty(vapidPrivate) || string.IsNullOrEmpty(vapidPublic) )
             {
@@ -37,7 +39,7 @@ namespace DisplayHomeTemp.Util
             }
             else
             {
-                options["VapidDetails"] = new VapidDetails(vapidSubject, vapidPublic, vapidPrivate);
+                Options["vapidDetails"] = new VapidDetails(vapidSubject, vapidPublic, vapidPrivate);
                 VapidPublicKey = vapidPublic;
             }
         }
@@ -49,7 +51,7 @@ namespace DisplayHomeTemp.Util
                 return;
             }
 
-            await WebPushClient.SendNotificationAsync(subscription, payload, options);
+            await WebPushClient.SendNotificationAsync(subscription, payload, Options);
 
             LastSentUtc = DateTime.UtcNow;
         }

@@ -3,15 +3,17 @@ using System;
 using DisplayHomeTemp.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace DisplayHomeTemp.Migrations
 {
     [DbContext(typeof(TempsDbContext))]
-    partial class TempsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20210117135212_add-subscriptions-table")]
+    partial class addsubscriptionstable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

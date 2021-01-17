@@ -13,7 +13,14 @@
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">DisplayHomeTemp</a>
-                <i class="bi bi-bell-fill"></i>
+                <button type="button" class="btn btn-dark">
+                <i class="bi bi-bell"
+                    style="font-size: 2rem;"
+                    onclick="notificationBellClick()"
+                    id="NotificationBell">
+                    </i>
+                </button>
+
             </div>
         </nav>
     </header>

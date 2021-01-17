@@ -20,9 +20,10 @@ namespace DisplayHomeTemp.Controllers
 
         private const double LOWTEMP = 9d;
 
-        public TemperatureController(TempsDbContext db, WebPushService webPushService)
+        public TemperatureController(TempsDbContext db, WebPushService wp)
         {
             _db = db;
+            _wp = wp;
         }
 
         [HttpPost]
@@ -50,7 +51,7 @@ namespace DisplayHomeTemp.Controllers
                 {
                     try
                     {
-                        await _wp.SendNotification(sub, $"Verbilki low temp alert: {tempReading.Temp} °C");
+                        await _wp.SendNotification(sub, $"Verbilki low temp alert: {tempReading.Temp} Â°C");
                     }
                     catch (WebPushException exception)
                     {
@@ -63,7 +64,6 @@ namespace DisplayHomeTemp.Controllers
                         Console.Error.WriteLine("SendNotification error with status code: " + exception.StatusCode);
                     }
                 }
-
             }
 
             try

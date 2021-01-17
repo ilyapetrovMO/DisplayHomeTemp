@@ -21,8 +21,7 @@ namespace DisplayHomeTemp.Controllers
             _db = dbContext;
         }
 
-        [HttpGet]
-        [Route("api/[controller]/vapidPublicKey")]
+        [HttpGet("api/[controller]/vapidPublicKey")]
         public IActionResult GetVapidPublicKey()
         {
             string vapidPublic = _wp.VapidPublicKey;
@@ -35,9 +34,8 @@ namespace DisplayHomeTemp.Controllers
             return new JsonResult(new { VapidPublicKey = vapidPublic });
         }
 
-        [HttpPost]
-        [Route("api/[controller]/register")]
-        public async Task<IActionResult> RegisterNewSubscription(WebPushSubscriptionJSON subscriptionDTO)
+        [HttpPost("api/[controller]/register")]
+        public async Task<IActionResult> RegisterNewSubscription([Bind("expirationTime, keys, endpoint")]WebPushSubscriptionJSON subscriptionDTO)
         {
             if(!ModelState.IsValid)
             {
@@ -47,7 +45,7 @@ namespace DisplayHomeTemp.Controllers
             var subscription = new WebPushSubscription
             {
                 Endpoint = subscriptionDTO.Endpoint,
-                ExpirationTime = subscriptionDTO.ExpirationTime,
+                ExpirationTime = subscriptionDTO.ExpirationTime ?? -1,
                 P256DH = subscriptionDTO.Keys.P256dh,
                 Auth = subscriptionDTO.Keys.Auth
             };
@@ -78,9 +76,8 @@ namespace DisplayHomeTemp.Controllers
 
         //}
 
-        [HttpDelete]
-        [Route("api/[controller]/delete")]
-        public async Task<IActionResult> DeleteSubscription(string Endpoint)
+        [HttpDelete("api/[controller]/delete")]
+        public async Task<IActionResult> DeleteSubscription([Bind("expirationTime, keys, endpoint")]WebPushSubscriptionJSON subscriptionDTO)
         {
             if (!ModelState.IsValid)
             {
@@ -88,7 +85,7 @@ namespace DisplayHomeTemp.Controllers
             }
 
             WebPushSubscription sub = await _db.Subscriptions
-                .Where(s => s.Endpoint == Endpoint)
+                .Where(s => s.Endpoint == subscriptionDTO.Endpoint)
                 .FirstOrDefaultAsync();
 
             if (sub == null)
