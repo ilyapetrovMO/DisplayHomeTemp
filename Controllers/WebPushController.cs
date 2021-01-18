@@ -66,7 +66,7 @@ namespace DisplayHomeTemp.Controllers
         }
 
         [HttpPost("api/[controller]/testnotify")]
-        public async Task<IActionResult> NotificationTest(string vapidPrivateKey)
+        public async Task<IActionResult> NotificationTest([FromBody]string vapidPrivateKey)
         {
             if (!ModelState.IsValid)
             {
@@ -75,6 +75,7 @@ namespace DisplayHomeTemp.Controllers
 
             if (vapidPrivateKey != Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"))
             {
+                Console.Error.WriteLine(Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"));
                 return BadRequest("wrong vapid key");
             }
 
