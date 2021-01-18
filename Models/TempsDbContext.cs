@@ -14,5 +14,7 @@ namespace DisplayHomeTemp.Models
         }
         
         public DbSet<TempReading> Temps { get; set; }
+
+        public DbSet<WebPushSubscription> Subscriptions { get; set; }
     }
 }

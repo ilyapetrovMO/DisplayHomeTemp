@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using DisplayHomeTemp.Models;
+using DisplayHomeTemp.Util;
 
 namespace DisplayHomeTemp
 {
@@ -58,6 +59,8 @@ namespace DisplayHomeTemp
             }
 
             services.AddControllers();
+
+            services.AddSingleton<WebPushService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

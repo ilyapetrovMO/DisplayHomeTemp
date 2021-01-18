@@ -6,6 +6,9 @@ COPY . .
 RUN dotnet tool install dotnet-ef && dotnet publish -c Release -o ./publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:5.0 AS RUNTIME
+ENV VAPID_PUBLIC_KEY $VAPID_PUBLIC_KEY
+ENV VAPID_PRIVATE_KEY $VAPID_PRIVATE_KEY
+ENV VAPID_SUBJECT $VAPID_SUBJECT
 WORKDIR /app
 COPY --from=BUILD /src/publish .
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
