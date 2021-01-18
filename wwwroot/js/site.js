@@ -112,6 +112,12 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 (async () => {
+    if (!navigator.serviceWorker) {
+        querySelector("#NotificationBellBtn").style.display = "none";
+        console.warn("This browser does not support service-workers.")
+        return;
+    }
+
     notificationBellButtonDisabled(true);
 
     navigator.serviceWorker.register('./service-worker.js').then(async registration => {
