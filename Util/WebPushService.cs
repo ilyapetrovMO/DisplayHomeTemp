@@ -12,7 +12,7 @@ namespace DisplayHomeTemp.Util
         public string VapidPublicKey { get; set; }
 
         private readonly Dictionary<string, object> Options;
-        private readonly TimeSpan MinTimeBetweenNotifications = TimeSpan.FromHours(0);
+        private readonly TimeSpan MinTimeBetweenNotifications = TimeSpan.FromHours(8);
         private DateTime? LastSentUtc = null;
 
         public WebPushService(IConfiguration config)
