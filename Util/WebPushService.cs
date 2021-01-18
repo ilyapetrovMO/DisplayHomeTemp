@@ -40,6 +40,7 @@ namespace DisplayHomeTemp.Util
             else
             {
                 Options["vapidDetails"] = new VapidDetails(vapidSubject, vapidPublic, vapidPrivate);
+                Options["TTL"] = 60 * 60; //in seconds
                 VapidPublicKey = vapidPublic;
             }
         }
@@ -54,6 +55,11 @@ namespace DisplayHomeTemp.Util
             await WebPushClient.SendNotificationAsync(subscription, payload, Options);
 
             LastSentUtc = DateTime.UtcNow;
+        }
+
+        public async Task SendNotificationImmediate(PushSubscription subscription, string payload)
+        {
+            await WebPushClient.SendNotificationAsync(subscription, payload, Options);
         }
     }
 }
