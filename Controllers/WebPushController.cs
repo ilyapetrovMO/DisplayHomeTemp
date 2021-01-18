@@ -65,6 +65,29 @@ namespace DisplayHomeTemp.Controllers
             }
         }
 
+        [HttpPost("api/[controller]/testnotify")]
+        public async Task<IActionResult> NotificationTest(string vapidPrivateKey)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            if (vapidPrivateKey != Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"))
+            {
+                return BadRequest("wrong vapid key");
+            }
+
+            var subs = await _db.Subscriptions.ToArrayAsync();
+
+            foreach (var sub in subs)
+            {
+                await _wp.SendNotificationImmediate(sub, $"Test Notification at {DateTime.UtcNow}");
+            }
+
+            return Ok();
+        }
+
         [HttpDelete("api/[controller]/delete")]
         public async Task<IActionResult> DeleteSubscription([Bind("expirationTime, keys, endpoint")]WebPushSubscriptionJSON subscriptionDTO)
         {
