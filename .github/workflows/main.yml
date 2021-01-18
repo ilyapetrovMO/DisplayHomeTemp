@@ -34,7 +34,7 @@ jobs:
       run: |
         export DATABASE_URL=$(heroku config:get DATABASE_URL)
         docker login --username=_ --password=${{ env.HEROKU_API_KEY }} registry.heroku.com
-        docker build -e VAPID_PRIVATE_KEY -e VAPID_PUBLIC_KEY -e VAPID_SUBJECT \
+        docker build --build-arg VAPID_PRIVATE_KEY --build-arg VAPID_PUBLIC_KEY --build-arg VAPID_SUBJECT \
         --build-arg ASPNETCORE_ENVIRONMENT=${{ env.ASPNETCORE_ENVIRONMENT }} --build-arg DATABASE_URL \
         -t registry.heroku.com/${{ env.APP_NAME }}/web .
         docker push registry.heroku.com/${{ env.APP_NAME }}/web
