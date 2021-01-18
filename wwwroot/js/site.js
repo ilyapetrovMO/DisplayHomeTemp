@@ -113,7 +113,7 @@ function urlBase64ToUint8Array(base64String) {
 
 (async () => {
     if (!navigator.serviceWorker) {
-        querySelector("#NotificationBellBtn").style.display = "none";
+        document.querySelector("#NotificationBellBtn").style.display = "none";
         console.warn("This browser does not support service-workers.")
         return;
     }
@@ -123,7 +123,7 @@ function urlBase64ToUint8Array(base64String) {
     navigator.serviceWorker.register('./service-worker.js').then(async registration => {
         await navigator.serviceWorker.ready;
 
-        registration.sync.register('sync-subscriptions');
+        await registration.sync.register('sync-subscriptions');
 
         await checkSubAndUpdateBell(registration);
         notificationBellButtonDisabled(false);
