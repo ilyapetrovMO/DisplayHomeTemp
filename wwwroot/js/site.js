@@ -5,7 +5,7 @@ function notificationBellButtonDisabled(state) {
     var btn = document.querySelector("#NotificationBellBtn");
 
     if (state) {
-        btn.setAttribute("disabled");
+        btn.setAttribute("disabled", "");
     } else {
         btn.removeAttribute("disabled");
     }
@@ -112,11 +112,14 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 (async () => {
+    notificationBellButtonDisabled(true);
+
     navigator.serviceWorker.register('./service-worker.js').then(async registration => {
         await navigator.serviceWorker.ready;
 
         registration.sync.register('sync-subscriptions');
 
-        checkSubAndUpdateBell(registration);
+        await checkSubAndUpdateBell(registration);
+        notificationBellButtonDisabled(false);
     });
 })()
