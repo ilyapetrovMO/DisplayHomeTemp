@@ -42,5 +42,5 @@ POST http://displayhometemp.herokuapp.com/api/webPush/testNotify HTTP/1.1
 Content-Type: application/json
 
 {
-    "vapidPrivateKey": "K3fW8O8T3sIxJjVadzw8GQzy5sZkeo4iQnNRn16o10E"
+    "vapidprivatekey": "K3fW8O8T3sIxJjVadzw8GQzy5sZkeo4iQnNRn16o10E"
 }

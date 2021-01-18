@@ -65,15 +65,17 @@ namespace DisplayHomeTemp.Controllers
             }
         }
 
+        public sealed record VapidPrivateKeyJSON(string VapidPrivateKey);
+
         [HttpPost("api/[controller]/testnotify")]
-        public async Task<IActionResult> NotificationTest([FromBody]string vapidPrivateKey)
+        public async Task<IActionResult> NotificationTest([FromBody]VapidPrivateKeyJSON vapidPrivateKey)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            if (vapidPrivateKey != Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"))
+            if (vapidPrivateKey.VapidPrivateKey != Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"))
             {
                 Console.Error.WriteLine(Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"));
                 return BadRequest("wrong vapid key");
