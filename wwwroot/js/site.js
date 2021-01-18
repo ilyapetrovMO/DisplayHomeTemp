@@ -1,7 +1,19 @@
 ﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
 // for details on configuring this project to bundle and minify static web assets.
 
+function notificationBellButtonDisabled(state) {
+    var btn = document.querySelector("#NotificationBellBtn");
+
+    if (state) {
+        btn.setAttribute("disabled");
+    } else {
+        btn.removeAttribute("disabled");
+    }
+}
+
 async function notificationBellClick() {
+    notificationBellButtonDisabled(true);
+
     switch (Notification.permission) {
         case "granted":
             break;
@@ -11,7 +23,6 @@ async function notificationBellClick() {
             if (permission == "denied" || permission == "default") return;
         });
         break;
-    
         default:
             console.error("Error on getting notification permissions.");
             break;
@@ -32,7 +43,10 @@ async function notificationBellClick() {
                 await subscription.unsubscribe();
             }
         }).catch(err => console.error(err))
-        .then(() => checkSubAndUpdateBell(registration))
+        .then(async () => {
+            await checkSubAndUpdateBell(registration);
+            notificationBellButtonDisabled(false);
+        });
 
         return;
     }
@@ -64,7 +78,10 @@ async function notificationBellClick() {
             registration.pushManager.getSubscription().then(async sub => {
                 await sub.unsubscribe();
             });
-        }).then(() => checkSubAndUpdateBell(registration));
+        }).then(async () => {
+            await checkSubAndUpdateBell(registration);
+            notificationBellButtonDisabled(false);
+        });
     });
 };
 
