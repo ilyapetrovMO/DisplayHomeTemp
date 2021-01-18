@@ -65,17 +65,6 @@ namespace DisplayHomeTemp.Controllers
             }
         }
 
-        //[HttpGet]
-        //[Route("api/[controller]/notify")]
-        //public IActionResult SendTestNotification()
-        //{
-        //    if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-        //    {
-        //        return NotFound();
-        //    }
-
-        //}
-
         [HttpDelete("api/[controller]/delete")]
         public async Task<IActionResult> DeleteSubscription([Bind("expirationTime, keys, endpoint")]WebPushSubscriptionJSON subscriptionDTO)
         {
