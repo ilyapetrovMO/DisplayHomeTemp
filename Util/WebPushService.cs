@@ -20,13 +20,13 @@ namespace DisplayHomeTemp.Util
             WebPushClient = new WebPushClient();
             Options = new Dictionary<string, object>();
 
-            var vapidPrivate = Environment.GetEnvironmentVariable("VapidPrivateKey");
+            var vapidPrivate = Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY");
             vapidPrivate = string.IsNullOrEmpty(config["VapidDetails:VapidPrivate"]) ? vapidPrivate : config["VapidDetails:VapidPrivate"];
 
-            var vapidPublic = Environment.GetEnvironmentVariable("VapidPublicKey");
+            var vapidPublic = Environment.GetEnvironmentVariable("VAPID_PUBLIC_KEY");
             vapidPublic = string.IsNullOrEmpty(config["VapidDetails:VapidPublic"]) ? vapidPublic : config["VapidDetails:VapidPublic"];
 
-            var vapidSubject = Environment.GetEnvironmentVariable("VapidSubject");
+            var vapidSubject = Environment.GetEnvironmentVariable("VAPID_SUBJECT");
             vapidSubject = string.IsNullOrEmpty(config["VapidDetails:VapidSubject"]) ? vapidSubject : config["VapidDetails:VapidSubject"];
 
             if (string.IsNullOrEmpty(vapidPrivate) || string.IsNullOrEmpty(vapidPublic) )
