@@ -21,6 +21,27 @@ namespace DisplayHomeTemp.Controllers
             _db = dbContext;
         }
 
+        [HttpGet("api/[controller]/issubscriptionactive")]
+        public async Task<IActionResult> IsSubscriptionActive(WebPushSubscriptionJSON subscriptionDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest();
+            }
+
+            var sub = await _db.Subscriptions.Where(s => s.Endpoint == subscriptionDTO.Endpoint).FirstOrDefaultAsync();
+
+            if(string.IsNullOrEmpty(sub.Endpoint))
+            {
+                return StatusCode(StatusCodes.Status410Gone, new { message = "subscription was not found" });
+            }
+            else
+            {
+                return Ok();
+            }
+        }
+
+
         [HttpGet("api/[controller]/vapidPublicKey")]
         public IActionResult GetVapidPublicKey()
         {
@@ -65,19 +86,18 @@ namespace DisplayHomeTemp.Controllers
             }
         }
 
-        public sealed record VapidPrivateKeyJSON(string VapidPrivateKey);
+        public sealed record NotificationTestJSON(string VapidPrivateKey, string Body);
 
         [HttpPost("api/[controller]/testnotify")]
-        public async Task<IActionResult> NotificationTest([FromBody]VapidPrivateKeyJSON vapidPrivateKey)
+        public async Task<IActionResult> NotificationTest([FromBody]NotificationTestJSON testNotification)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            if (vapidPrivateKey.VapidPrivateKey != Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"))
+            if (testNotification.VapidPrivateKey != _wp.VapidPrivateKey)
             {
-                Console.Error.WriteLine(Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY"));
                 return BadRequest("wrong vapid key");
             }
 
@@ -85,7 +105,7 @@ namespace DisplayHomeTemp.Controllers
 
             foreach (var sub in subs)
             {
-                await _wp.SendNotificationImmediate(sub, $"Test Notification at {DateTime.UtcNow}");
+                await _wp.SendNotification(sub, $"{testNotification.Body} | {DateTime.UtcNow}");
             }
 
             return Ok();

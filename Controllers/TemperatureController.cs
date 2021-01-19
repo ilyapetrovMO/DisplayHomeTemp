@@ -18,7 +18,21 @@ namespace DisplayHomeTemp.Controllers
         private readonly TempsDbContext _db;
         private readonly WebPushService _wp;
 
-        private const double LOWTEMP = 9d;
+        private const double LOWTEMP = 10d;
+
+        private readonly TimeSpan NotificationCooldown = TimeSpan.FromHours(8);
+
+        private bool IsOnCooldown()
+        {
+            if (_wp.LastSentUtc != null && ((DateTime.UtcNow - _wp.LastSentUtc) < NotificationCooldown))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         public TemperatureController(TempsDbContext db, WebPushService wp)
         {
@@ -27,7 +41,7 @@ namespace DisplayHomeTemp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostTemperature([FromBody] TempDto tempReadingDto)
+        public async Task<IActionResult> PostTemperature(TempDto tempReadingDto)
         {
             if (!ModelState.IsValid)
             {
@@ -43,7 +57,7 @@ namespace DisplayHomeTemp.Controllers
 
             _db.Temps.Add(tempReading);
 
-            if (tempReading.Temp < LOWTEMP)
+            if (tempReading.Temp < LOWTEMP && !IsOnCooldown())
             {
                 var subs = await _db.Subscriptions.ToArrayAsync();
 
@@ -51,7 +65,7 @@ namespace DisplayHomeTemp.Controllers
                 {
                     try
                     {
-                        await _wp.SendNotification(sub, $"Verbilki low temp alert: {tempReading.Temp} °C");
+                        await _wp.SendNotification(sub, $"Low temp: {tempReading.Temp}");
                     }
                     catch (WebPushException exception)
                     {
