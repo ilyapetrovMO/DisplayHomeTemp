@@ -21,7 +21,7 @@ namespace DisplayHomeTemp.Controllers
             _db = dbContext;
         }
 
-        [HttpGet("api/[controller]/issubscriptionactive")]
+        [HttpPost("api/[controller]/isSubscriptionActive")]
         public async Task<IActionResult> IsSubscriptionActive(WebPushSubscriptionJSON subscriptionDTO)
         {
             if (!ModelState.IsValid)

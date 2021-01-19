@@ -93,6 +93,28 @@ async function notificationBellClick() {
     });
 };
 
+async function verifySub(registration) {
+    let sub = await registration.pushManager.getSubscription();
+
+    let res = await fetch('./api/webpush/isSubscriptionActive', {
+        method: 'Post',
+        headers: {
+            'Content-type': 'application/json',
+        },
+        body: JSON.stringify(sub),
+    })
+
+    if (res.ok) {
+        console.info("subscription verified.");
+
+        return;
+    } else if ( res.status == 410) {
+        await sub.unsubscribe();
+
+        return;
+    }
+}
+
 async function checkSubAndUpdateBell(registration) {
     await registration.pushManager.getSubscription().then(sub => {
         let bell = document.querySelector("#NotificationBell");
@@ -129,13 +151,12 @@ function urlBase64ToUint8Array(base64String) {
     notificationBellButtonDisabled(true);
 
     navigator.serviceWorker.register('./service-worker.js').then(async registration => {
+        await verifySub(registration);
+
         await navigator.serviceWorker.ready;
 
         await Promise.all([
             registration.sync.register('sync-subscriptions'),
-            registration.periodicSync.register('verify-subscription', {
-                minInerval: 24 * 60 * 60 * 1000,
-            })
         ]);
 
         await checkSubAndUpdateBell(registration);
