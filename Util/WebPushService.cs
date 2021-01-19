@@ -9,11 +9,11 @@ namespace DisplayHomeTemp.Util
     public class WebPushService
     {
         public WebPushClient WebPushClient { get; init; }
-        public string VapidPublicKey { get; set; }
+        public string VapidPublicKey { get; init; }
+        public string VapidPrivateKey { get; init; }
+        public DateTime? LastSentUtc { get; private set; }
 
         private readonly Dictionary<string, object> Options;
-        private readonly TimeSpan MinTimeBetweenNotifications = TimeSpan.FromHours(8);
-        private DateTime? LastSentUtc = null;
 
         public WebPushService(IConfiguration config)
         {
@@ -42,24 +42,15 @@ namespace DisplayHomeTemp.Util
                 Options["vapidDetails"] = new VapidDetails(vapidSubject, vapidPublic, vapidPrivate);
                 Options["TTL"] = 60 * 60; //in seconds
                 VapidPublicKey = vapidPublic;
+                VapidPrivateKey = vapidPrivate;
             }
         }
 
         public async Task SendNotification(PushSubscription subscription, string payload)
         {
-            if (LastSentUtc != null && ((DateTime.UtcNow - LastSentUtc) < MinTimeBetweenNotifications))
-            {
-                return;
-            }
-
             await WebPushClient.SendNotificationAsync(subscription, payload, Options);
 
             LastSentUtc = DateTime.UtcNow;
-        }
-
-        public async Task SendNotificationImmediate(PushSubscription subscription, string payload)
-        {
-            await WebPushClient.SendNotificationAsync(subscription, payload, Options);
         }
     }
 }

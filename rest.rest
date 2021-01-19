@@ -26,13 +26,3 @@ content-type: application/json
     "humidity": 123.2,
     "timestamp": "Tue, 15 Nov 1994 12:45:26 GMT"
 }
-
-###
-POST http://displayhometemp.herokuapp.com/api/Temperature HTTP/1.1
-content-type: application/json
-
-{
-    "temperature": 8,
-    "humidity": 123.2,
-    "timestamp": "Tue, 15 Nov 1994 12:45:26 GMT"
-}

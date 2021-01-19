@@ -28,6 +28,14 @@ self.addEventListener('sync', event => {
     }
 });
 
+self.addEventListener('periodicsync', async event => {
+    if (event.tag == 'verify-subscription') {
+      event.waitUntil(
+          await verifySub()
+      );
+    }
+  });
+
 self.addEventListener('push', event => {
     event.waitUntil(
         self.registration.showNotification("Verbilki temp", {
@@ -37,3 +45,24 @@ self.addEventListener('push', event => {
         })
     );
 });
+
+async function verifySub() {
+    let sub = await self.registration.pushManager.getSubscription();
+
+    let res = await fetch('./api/webpush/issubscriptionactive', {
+        headers: {
+            'Content-type': 'application/json',
+        },
+        body: JSON.stringify(sub),
+    })
+
+    if (res.ok) {
+        console.info("subscription verified.");
+
+        return;
+    } else {
+        await sub.unsubscribe();
+
+        return;
+    }
+}

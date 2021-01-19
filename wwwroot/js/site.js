@@ -51,7 +51,15 @@ async function notificationBellClick() {
         return;
     }
 
-    const responseBody = await (await fetch('./api/webPush/vapidPublicKey')).json();
+    const response = await fetch('./api/webPush/vapidPublicKey');
+
+    if (!response.ok) {
+        console.error("server could not provide a vapidPublicKey");
+
+        return;
+    }
+
+    const responseBody = await response.json();
     const convertedVapidKey = urlBase64ToUint8Array(responseBody.vapidPublicKey);
 
     await registration.pushManager.getSubscription().then( sub => {
@@ -114,7 +122,7 @@ function urlBase64ToUint8Array(base64String) {
 (async () => {
     if (!navigator.serviceWorker) {
         document.querySelector("#NotificationBellBtn").style.display = "none";
-        console.warn("This browser does not support service-workers.")
+        console.warn("This browser does not support service-workers or you are not using https.")
         return;
     }
 
@@ -123,7 +131,12 @@ function urlBase64ToUint8Array(base64String) {
     navigator.serviceWorker.register('./service-worker.js').then(async registration => {
         await navigator.serviceWorker.ready;
 
-        await registration.sync.register('sync-subscriptions');
+        await Promise.all([
+            registration.sync.register('sync-subscriptions'),
+            registration.periodicSync.register('verify-subscription', {
+                minInerval: 24 * 60 * 60 * 1000,
+            })
+        ]);
 
         await checkSubAndUpdateBell(registration);
         notificationBellButtonDisabled(false);
