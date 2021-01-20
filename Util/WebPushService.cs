@@ -3,22 +3,41 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using WebPush;
 using System.Threading.Tasks;
+using DisplayHomeTemp.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace DisplayHomeTemp.Util
 {
     public class WebPushService
     {
+        private readonly IDbContextFactory<TempsDbContext> _db;
+        private readonly IMemoryCache _mc;
+        private readonly Dictionary<string, object> _options;
+        private readonly TimeSpan NotificationCooldown = TimeSpan.FromHours(8);
+
         public WebPushClient WebPushClient { get; init; }
         public string VapidPublicKey { get; init; }
-        public string VapidPrivateKey { get; init; }
+        private string VapidPrivateKey { get; init; }
         public DateTime? LastSentUtc { get; private set; }
 
-        private readonly Dictionary<string, object> Options;
-
-        public WebPushService(IConfiguration config)
+        private bool IsOnCooldown()
         {
+            if (_mc.TryGetValue("LastSentUtc", out DateTime? lastSentUtc))
+            {
+                LastSentUtc = lastSentUtc;
+            }
+
+            return (LastSentUtc != null && ((DateTime.UtcNow - LastSentUtc) < NotificationCooldown));
+        }
+
+        public WebPushService(IConfiguration config, IDbContextFactory<TempsDbContext> db, IMemoryCache mc)
+        {
+            _db = db;
+            _mc = mc;
+
             WebPushClient = new WebPushClient();
-            Options = new Dictionary<string, object>();
+            _options = new Dictionary<string, object>();
 
             var vapidPrivate = Environment.GetEnvironmentVariable("VAPID_PRIVATE_KEY");
             vapidPrivate = string.IsNullOrEmpty(config["VapidDetails:VapidPrivate"]) ? vapidPrivate : config["VapidDetails:VapidPrivate"];
@@ -39,18 +58,56 @@ namespace DisplayHomeTemp.Util
             }
             else
             {
-                Options["vapidDetails"] = new VapidDetails(vapidSubject, vapidPublic, vapidPrivate);
-                Options["TTL"] = 60 * 60; //in seconds
+                _options["vapidDetails"] = new VapidDetails(vapidSubject, vapidPublic, vapidPrivate);
+                _options["TTL"] = 60 * 60; //in seconds
                 VapidPublicKey = vapidPublic;
                 VapidPrivateKey = vapidPrivate;
             }
         }
 
-        public async Task SendNotification(PushSubscription subscription, string payload)
+        public async Task SendNotificationToAll(string payload, bool immediate = false)
         {
-            await WebPushClient.SendNotificationAsync(subscription, payload, Options);
+            if (!immediate && IsOnCooldown())
+                return;
 
-            LastSentUtc = DateTime.UtcNow;
+            using (var dbContext = _db.CreateDbContext())
+            {
+                var subs = await dbContext.Subscriptions.ToArrayAsync();
+
+                foreach (var sub in subs)
+                {
+                    try
+                    {
+                        await WebPushClient.SendNotificationAsync(sub, payload, _options);
+                    }
+                    catch (WebPushException exception)
+                    {
+                        if (exception.StatusCode == System.Net.HttpStatusCode.NotFound || exception.StatusCode == System.Net.HttpStatusCode.Gone)
+                        {
+                            dbContext.Subscriptions.Remove(sub);
+                            await dbContext.SaveChangesAsync();
+                        }
+
+                        Console.Error.WriteLine("SendNotification error with status code: " + exception.StatusCode);
+                    }
+                }
+            }
+
+            _mc.Set("LastSentUtc", DateTime.UtcNow);
+        }
+
+        public async Task TestNotifications(string payload, string vapidPrivateKey)
+        {
+            if (vapidPrivateKey != VapidPrivateKey)
+                throw new WrongVapidPrivateKeyException("Wrong VAPID private key.");
+
+            using var dbContext = _db.CreateDbContext();
+            var subs = await dbContext.Subscriptions.ToArrayAsync();
+
+            foreach (var sub in subs)
+            {
+                await WebPushClient.SendNotificationAsync(sub, payload + $" Last sent: {LastSentUtc}", _options);
+            }
         }
     }
 }

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Threading.Tasks;
 using DisplayHomeTemp.Models;
 using System.Linq;
@@ -13,9 +12,9 @@ namespace DisplayHomeTemp.Controllers
     public class WebPushController : ControllerBase
     {
         private readonly WebPushService _wp;
-        private readonly TempsDbContext _db;
+        private readonly IDbContextFactory<TempsDbContext> _db;
 
-        public WebPushController(WebPushService pushService, TempsDbContext dbContext)
+        public WebPushController(WebPushService pushService, IDbContextFactory<TempsDbContext> dbContext)
         {
             _wp = pushService;
             _db = dbContext;
@@ -29,7 +28,8 @@ namespace DisplayHomeTemp.Controllers
                 return BadRequest();
             }
 
-            var sub = await _db.Subscriptions.Where(s => s.Endpoint == subscriptionDTO.Endpoint).FirstOrDefaultAsync();
+            using var dbContext = _db.CreateDbContext();
+            var sub = await dbContext.Subscriptions.Where(s => s.Endpoint == subscriptionDTO.Endpoint).FirstOrDefaultAsync();
 
             if(string.IsNullOrEmpty(sub.Endpoint))
             {
@@ -56,7 +56,7 @@ namespace DisplayHomeTemp.Controllers
         }
 
         [HttpPost("api/[controller]/register")]
-        public async Task<IActionResult> RegisterNewSubscription([Bind("expirationTime, keys, endpoint")]WebPushSubscriptionJSON subscriptionDTO)
+        public async Task<IActionResult> RegisterNewSubscription(WebPushSubscriptionJSON subscriptionDTO)
         {
             if(!ModelState.IsValid)
             {
@@ -71,11 +71,12 @@ namespace DisplayHomeTemp.Controllers
                 Auth = subscriptionDTO.Keys.Auth
             };
 
-            _db.Subscriptions.Add(subscription);
+            using var dbContext = _db.CreateDbContext();
+            dbContext.Subscriptions.Add(subscription);
 
             try
             {
-                return Ok(await _db.SaveChangesAsync());
+                return Ok(await dbContext.SaveChangesAsync());
             }
             catch (DbUpdateException)
             {
@@ -96,30 +97,28 @@ namespace DisplayHomeTemp.Controllers
                 return BadRequest();
             }
 
-            if (testNotification.VapidPrivateKey != _wp.VapidPrivateKey)
+            try
             {
-                return BadRequest("wrong vapid key");
+                await _wp.TestNotifications(testNotification.Body, testNotification.VapidPrivateKey);
             }
-
-            var subs = await _db.Subscriptions.ToArrayAsync();
-
-            foreach (var sub in subs)
+            catch (WrongVapidPrivateKeyException e)
             {
-                await _wp.SendNotification(sub, $"{testNotification.Body} | {DateTime.UtcNow}");
+                return BadRequest(e.Message);
             }
 
             return Ok();
         }
 
         [HttpDelete("api/[controller]/delete")]
-        public async Task<IActionResult> DeleteSubscription([Bind("expirationTime, keys, endpoint")]WebPushSubscriptionJSON subscriptionDTO)
+        public async Task<IActionResult> DeleteSubscription(WebPushSubscriptionJSON subscriptionDTO)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            WebPushSubscription sub = await _db.Subscriptions
+            using var dbContext = _db.CreateDbContext();
+            WebPushSubscription sub = await dbContext.Subscriptions
                 .Where(s => s.Endpoint == subscriptionDTO.Endpoint)
                 .FirstOrDefaultAsync();
 
@@ -128,9 +127,9 @@ namespace DisplayHomeTemp.Controllers
                 return BadRequest("A subscription with the specified Endpoint does not exist.");
             }
 
-            _db.Remove(sub);
+            dbContext.Remove(sub);
             
-            return Ok(await _db.SaveChangesAsync());
+            return Ok(await dbContext.SaveChangesAsync());
         }
     }
 }

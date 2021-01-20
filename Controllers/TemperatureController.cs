@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using DisplayHomeTemp.Models;
 using Microsoft.EntityFrameworkCore;
 using DisplayHomeTemp.Util;
-using WebPush;
 
 namespace DisplayHomeTemp.Controllers
 {
@@ -13,28 +12,13 @@ namespace DisplayHomeTemp.Controllers
     [ApiController]
     public class TemperatureController : ControllerBase
     {
-        public record TempDto(double temperature, double humidity, string timestamp);
-
-        private readonly TempsDbContext _db;
+        private readonly IDbContextFactory<TempsDbContext> _db;
         private readonly WebPushService _wp;
-
         private const double LOWTEMP = 10d;
 
-        private readonly TimeSpan NotificationCooldown = TimeSpan.FromHours(8);
+        public record TempDto(double Temperature, double Humidity, string Timestamp);
 
-        private bool IsOnCooldown()
-        {
-            if (_wp.LastSentUtc != null && ((DateTime.UtcNow - _wp.LastSentUtc) < NotificationCooldown))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public TemperatureController(TempsDbContext db, WebPushService wp)
+        public TemperatureController(IDbContextFactory<TempsDbContext> db, WebPushService wp)
         {
             _db = db;
             _wp = wp;
@@ -50,39 +34,23 @@ namespace DisplayHomeTemp.Controllers
 
             var tempReading = new TempReading
             {
-                Temp = tempReadingDto.temperature,
-                Humidity = tempReadingDto.humidity,
-                Time = Convert.ToDateTime(tempReadingDto.timestamp)
+                Temp = tempReadingDto.Temperature,
+                Humidity = tempReadingDto.Humidity,
+                Time = Convert.ToDateTime(tempReadingDto.Timestamp)
             };
 
-            _db.Temps.Add(tempReading);
+            using var dbContext = _db.CreateDbContext();
 
-            if (tempReading.Temp < LOWTEMP && !IsOnCooldown())
+            dbContext.Temps.Add(tempReading);
+
+            if (tempReading.Temp < LOWTEMP)
             {
-                var subs = await _db.Subscriptions.ToArrayAsync();
-
-                foreach (var sub in subs)
-                {
-                    try
-                    {
-                        await _wp.SendNotification(sub, $"Low temp: {tempReading.Temp}");
-                    }
-                    catch (WebPushException exception)
-                    {
-                        if (exception.StatusCode == System.Net.HttpStatusCode.NotFound || exception.StatusCode == System.Net.HttpStatusCode.Gone)
-                        {
-                            _db.Subscriptions.Remove(sub);
-                            await _db.SaveChangesAsync();
-                        }
-
-                        Console.Error.WriteLine("SendNotification error with status code: " + exception.StatusCode);
-                    }
-                }
+                _ = _wp.SendNotificationToAll($"Low temp: {tempReading.Temp}");
             }
 
             try
             {
-                return Ok(await _db.SaveChangesAsync());
+                return Ok(await dbContext.SaveChangesAsync());
             }
             catch (DbUpdateException)
             {
