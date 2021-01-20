@@ -16,9 +16,9 @@ namespace DisplayHomeTemp.Pages
         public TempReading[] Temps { get; set; }
         private readonly ILogger<IndexModel> _logger;
 
-        private readonly TempsDbContext _db;
+        private readonly IDbContextFactory<TempsDbContext> _db;
 
-        public IndexModel(ILogger<IndexModel> logger, TempsDbContext db)
+        public IndexModel(ILogger<IndexModel> logger, IDbContextFactory<TempsDbContext> db)
         {
             _db = db;
             _logger = logger;
@@ -26,7 +26,8 @@ namespace DisplayHomeTemp.Pages
 
         public async Task OnGet()
         {
-            Temps = await (from t in _db.Temps
+            using var dbContext = _db.CreateDbContext();
+            Temps = await (from t in dbContext.Temps
                     orderby t.Time
                     select t).OrderByDescending(t => t.Time).Take(10).ToArrayAsync<TempReading>();
         }
