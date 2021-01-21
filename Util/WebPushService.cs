@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DisplayHomeTemp.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 
 namespace DisplayHomeTemp.Util
 {
@@ -13,6 +14,7 @@ namespace DisplayHomeTemp.Util
     {
         private readonly IDbContextFactory<TempsDbContext> _db;
         private readonly IMemoryCache _mc;
+        private readonly ILogger<WebPushService> _logger;
         private readonly Dictionary<string, object> _options;
         private readonly TimeSpan NotificationCooldown = TimeSpan.FromHours(8);
 
@@ -31,8 +33,9 @@ namespace DisplayHomeTemp.Util
             return (LastSentUtc != null && ((DateTime.UtcNow - LastSentUtc) < NotificationCooldown));
         }
 
-        public WebPushService(IConfiguration config, IDbContextFactory<TempsDbContext> db, IMemoryCache mc)
+        public WebPushService(IConfiguration config, IDbContextFactory<TempsDbContext> db, IMemoryCache mc, ILogger<WebPushService> logger)
         {
+            _logger = logger;
             _db = db;
             _mc = mc;
 
@@ -50,10 +53,12 @@ namespace DisplayHomeTemp.Util
 
             if (string.IsNullOrEmpty(vapidPrivate) || string.IsNullOrEmpty(vapidPublic) )
             {
+                _logger.LogCritical("Vapid keys not in env or application.json");
                 throw new VapidDetailsNotDefinedException("One or more Vapid keys were empty or null.");
             }
             else if (string.IsNullOrEmpty(vapidSubject))
             {
+                _logger.LogCritical("Vapid subject not in env or application.json");
                 throw new VapidDetailsNotDefinedException("Vapid subject not in config or env variable.");
             }
             else
@@ -88,11 +93,12 @@ namespace DisplayHomeTemp.Util
                             await dbContext.SaveChangesAsync();
                         }
 
-                        Console.Error.WriteLine("SendNotification error with status code: " + exception.StatusCode);
+                        _logger.LogInformation($"SendNotification error with status code: {exception.StatusCode}, deleting subscription.");
                     }
                 }
             }
 
+            _logger.LogInformation($"Last sent notification: {DateTime.UtcNow} (UTC)");
             _mc.Set("LastSentUtc", DateTime.UtcNow);
         }
 
