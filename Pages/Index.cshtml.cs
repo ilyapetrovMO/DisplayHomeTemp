@@ -29,7 +29,7 @@ namespace DisplayHomeTemp.Pages
             using var dbContext = _db.CreateDbContext();
             Temps = await (from t in dbContext.Temps
                     orderby t.Time
-                    select t).OrderByDescending(t => t.Time).Take(10).ToArrayAsync<TempReading>();
+                    select t).OrderByDescending(t => t.Time).Take(10).ToArrayAsync();
         }
     }
 }
