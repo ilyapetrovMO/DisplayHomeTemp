@@ -52,7 +52,7 @@ namespace DisplayHomeTemp
 
                 var connStr = $"Server={pgHost};Port={pgPort};User Id={pgUser};Password={pgPass};Database={pgDb};SslMode=Require;Trust Server Certificate=true";
                 
-                services.AddDbContext<TempsDbContext>(options =>
+                services.AddDbContextFactory<TempsDbContext>(options =>
                     options.UseNpgsql(connStr));
             }
 
