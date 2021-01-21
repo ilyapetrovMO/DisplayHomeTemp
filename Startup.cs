@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,11 +24,13 @@ namespace DisplayHomeTemp
         {
             services.AddRazorPages();
 
+            services.AddMemoryCache();
+
             Console.WriteLine("DEBUG: " + Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"));
 
             if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
             {
-                services.AddDbContext<TempsDbContext>(options =>
+                services.AddDbContextFactory<TempsDbContext>(options =>
                     options.UseNpgsql(Configuration.GetConnectionString("localDb")));
             }
             else
@@ -58,9 +56,16 @@ namespace DisplayHomeTemp
                     options.UseNpgsql(connStr));
             }
 
+            services.AddHsts(options =>
+            {
+                options.IncludeSubDomains = true;
+                //options.Preload = true;
+                options.MaxAge = TimeSpan.FromDays(1);
+            });
+
             services.AddControllers();
 
-            services.AddSingleton<WebPushService>();
+            services.AddScoped<WebPushService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -74,10 +79,11 @@ namespace DisplayHomeTemp
             {
                 app.UseExceptionHandler("/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                //app.UseHsts();
+                app.UseHsts();
             }
 
             //app.UseHttpsRedirection();
+
             app.UseStaticFiles();
 
             app.UseRouting();
